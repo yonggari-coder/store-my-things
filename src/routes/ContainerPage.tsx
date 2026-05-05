@@ -1,11 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import EmptyContainerHint from '../components/EmptyContainerHint'
 import Grid from '../components/Grid'
+import NodeSheet from '../components/NodeSheet'
+import type { NodeSheetMode } from '../components/NodeSheet'
 import { db } from '../db'
 import { getPath } from '../lib/path'
-import type { MapNode } from '../types'
+import type { MapNode, Position } from '../types'
+
+type ArmedCell = { parentId: string | null; pos: Position }
 
 export default function ContainerPage() {
   const { spaceId, nodeId } = useParams()
@@ -24,10 +29,12 @@ export default function ContainerPage() {
     [spaceId],
   )
 
+  const [armed, setArmed] = useState<ArmedCell | null>(null)
+  const [sheetMode, setSheetMode] = useState<NodeSheetMode | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
   if (!spaceId) {
-    return (
-      <NotFoundMessage message="잘못된 주소입니다." />
-    )
+    return <NotFoundMessage message="잘못된 주소입니다." />
   }
 
   if (path === undefined || allInSpace === undefined) {
@@ -39,7 +46,7 @@ export default function ContainerPage() {
   }
 
   const currentNode = parentId
-    ? allInSpace.find((n) => n.id === parentId) ?? null
+    ? (allInSpace.find((n) => n.id === parentId) ?? null)
     : null
 
   if (parentId !== null && !currentNode) {
@@ -54,6 +61,25 @@ export default function ContainerPage() {
     if (n.parentId !== null) containerIds.add(n.parentId)
   }
 
+  const armedHere =
+    armed && armed.parentId === parentId ? armed.pos : null
+
+  const handleArm = (pos: Position) => {
+    setArmed({ parentId, pos })
+  }
+
+  const handleCreate = (pos: Position) => {
+    setArmed(null)
+    setSheetMode({ kind: 'create', spaceId, parentId, position: pos })
+    setSheetOpen(true)
+  }
+
+  const handleEdit = (node: MapNode) => {
+    setArmed(null)
+    setSheetMode({ kind: 'edit', node })
+    setSheetOpen(true)
+  }
+
   return (
     <div className="flex flex-col">
       <Breadcrumb path={path} spaceId={spaceId} />
@@ -61,11 +87,25 @@ export default function ContainerPage() {
         <EmptyContainerHint spaceId={spaceId} isRoot={parentId === null} />
       ) : (
         <Grid
+          spaceId={spaceId}
           gridSize={gridSize}
           nodes={children}
           containerIds={containerIds}
+          armedPosition={armedHere}
+          onArm={handleArm}
+          onCreate={handleCreate}
+          onEdit={handleEdit}
         />
       )}
+
+      <NodeSheet
+        open={sheetOpen}
+        onOpenChange={(next) => {
+          setSheetOpen(next)
+          if (!next) setSheetMode(null)
+        }}
+        mode={sheetMode}
+      />
     </div>
   )
 }
