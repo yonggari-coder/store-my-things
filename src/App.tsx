@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
+import CategoriesPage from './routes/CategoriesPage'
 import ContainerPage from './routes/ContainerPage'
 import NotFoundPage from './routes/NotFoundPage'
 import SearchPage from './routes/SearchPage'
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
       { path: 's/:spaceId/n/:nodeId', element: <ContainerPage /> },
       { path: 'search', element: <SearchPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'settings/categories', element: <CategoriesPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
