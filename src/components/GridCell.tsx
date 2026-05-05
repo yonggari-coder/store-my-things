@@ -8,6 +8,7 @@ export default function GridCell({
   node,
   isContainer,
   isArmed,
+  highlighted,
   onArm,
   onCreate,
   onEdit,
@@ -16,6 +17,7 @@ export default function GridCell({
   node: MapNode | null
   isContainer: boolean
   isArmed: boolean
+  highlighted: boolean
   onArm: () => void
   onCreate: () => void
   onEdit: () => void
@@ -45,8 +47,7 @@ export default function GridCell({
 
   const tint = node.color ? `${node.color}1a` : '#ffffff'
   const border = node.color ?? '#e5e5e5'
-  const baseClasses =
-    'relative flex aspect-square flex-col overflow-hidden rounded-md border p-1.5 text-left active:scale-[0.98]'
+  const baseClasses = `relative flex aspect-square flex-col overflow-hidden rounded-md border p-1.5 text-left active:scale-[0.98] ${highlighted ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`
   const label = (
     <span className="line-clamp-2 text-[11px] leading-tight font-medium text-neutral-800">
       {node.name}

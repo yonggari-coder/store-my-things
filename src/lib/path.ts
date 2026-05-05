@@ -29,3 +29,21 @@ export async function getPath(
   }
   return segments
 }
+
+export function buildAncestorPath(
+  node: MapNode,
+  nodesById: ReadonlyMap<string, MapNode>,
+  spacesById: ReadonlyMap<string, Space>,
+): string[] {
+  const parts: string[] = []
+  let cursor: string | null = node.parentId
+  while (cursor !== null) {
+    const parent = nodesById.get(cursor)
+    if (!parent) break
+    parts.unshift(parent.name)
+    cursor = parent.parentId
+  }
+  const space = spacesById.get(node.spaceId)
+  if (space) parts.unshift(space.name)
+  return parts
+}

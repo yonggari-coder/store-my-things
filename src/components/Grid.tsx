@@ -25,6 +25,7 @@ export default function Grid({
   containerIds,
   editing,
   armedPosition,
+  highlightId,
   onArm,
   onCreate,
   onEdit,
@@ -42,6 +43,7 @@ export default function Grid({
   containerIds: ReadonlySet<string>
   editing: boolean
   armedPosition: Position | null
+  highlightId: string | null
   onArm: (pos: Position) => void
   onCreate: (pos: Position) => void
   onEdit: (node: MapNode) => void
@@ -99,6 +101,7 @@ export default function Grid({
             node={node}
             isContainer={node ? containerIds.has(node.id) : false}
             isArmed={isArmed}
+            highlighted={node !== null && node.id === highlightId}
             onArm={() => onArm({ x, y })}
             onCreate={() => onCreate({ x, y })}
             onEdit={() => {

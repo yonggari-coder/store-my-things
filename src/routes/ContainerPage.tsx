@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Pencil } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import CellMenuSheet from '../components/CellMenuSheet'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -22,6 +22,8 @@ const MAX_GRID: GridSize = { width: 12, height: 12 }
 export default function ContainerPage() {
   const { spaceId, nodeId } = useParams()
   const parentId = nodeId ?? null
+  const [searchParams] = useSearchParams()
+  const highlightId = searchParams.get('highlight')
 
   const path = useLiveQuery(
     async () => (spaceId ? getPath(spaceId, parentId) : []),
@@ -199,6 +201,7 @@ export default function ContainerPage() {
           containerIds={containerIds}
           editing={editing}
           armedPosition={armedHere}
+          highlightId={highlightId}
           onArm={handleArm}
           onCreate={handleCreate}
           onEdit={handleEditLeaf}
