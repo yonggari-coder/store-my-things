@@ -5,11 +5,11 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import type { ReactNode, RefObject } from 'react'
+import { useRef, type ReactNode } from 'react'
+import { buildOccupancy } from '../lib/grid'
 import type { GridSize, MapNode, Position } from '../types'
 import EditableGridCell from './EditableGridCell'
 import GridCell from './GridCell'
-import ResizeHandle from './ResizeHandle'
 
 const cellId = (x: number, y: number) => `${x}:${y}`
 const parseCellId = (id: string): Position => {
@@ -18,7 +18,6 @@ const parseCellId = (id: string): Position => {
 }
 
 export default function Grid({
-  gridRef,
   spaceId,
   gridSize,
   nodes,
@@ -31,12 +30,8 @@ export default function Grid({
   onEdit,
   onMenu,
   onDragSwap,
-  onResizePreview,
-  onResizeCommit,
-  minSize,
-  maxSize,
+  onResize,
 }: {
-  gridRef: RefObject<HTMLDivElement | null>
   spaceId: string
   gridSize: GridSize
   nodes: MapNode[]
@@ -49,19 +44,14 @@ export default function Grid({
   onEdit: (node: MapNode) => void
   onMenu: (node: MapNode) => void
   onDragSwap: (sourcePos: Position, targetPos: Position) => void
-  onResizePreview: (next: GridSize) => void
-  onResizeCommit: (next: GridSize) => void
-  minSize: GridSize
-  maxSize: GridSize
+  onResize: (nodeId: string, size: GridSize) => void
 }) {
-  const byPos = new Map<string, MapNode>()
-  for (const n of nodes) {
-    byPos.set(`${n.position.x},${n.position.y}`, n)
-  }
+  const gridRef = useRef<HTMLDivElement | null>(null)
+  const occupied = buildOccupancy(nodes)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { delay: 250, tolerance: 8 },
     }),
   )
 
@@ -74,66 +64,95 @@ export default function Grid({
   }
 
   const cells: ReactNode[] = []
+
+  for (const n of nodes) {
+    const id = cellId(n.position.x, n.position.y)
+    if (editing) {
+      cells.push(
+        <EditableGridCell
+          key={`n-${n.id}`}
+          cellId={id}
+          node={n}
+          position={n.position}
+          isContainer={containerIds.has(n.id)}
+          gridSize={gridSize}
+          allNodes={nodes}
+          gridRef={gridRef}
+          onMenu={onMenu}
+          onResize={onResize}
+        />,
+      )
+    } else {
+      cells.push(
+        <GridCell
+          key={`n-${n.id}`}
+          spaceId={spaceId}
+          node={n}
+          position={n.position}
+          isContainer={containerIds.has(n.id)}
+          isArmed={false}
+          highlighted={n.id === highlightId}
+          onArm={() => undefined}
+          onCreate={() => undefined}
+          onEdit={() => onEdit(n)}
+        />,
+      )
+    }
+  }
+
   for (let y = 0; y < gridSize.height; y++) {
     for (let x = 0; x < gridSize.width; x++) {
-      const node = byPos.get(`${x},${y}`) ?? null
+      if (occupied.has(`${x},${y}`)) continue
       const id = cellId(x, y)
       if (editing) {
         cells.push(
           <EditableGridCell
-            key={id}
+            key={`e-${id}`}
             cellId={id}
-            node={node}
-            isContainer={node ? containerIds.has(node.id) : false}
+            node={null}
+            position={{ x, y }}
+            isContainer={false}
+            gridSize={gridSize}
+            allNodes={nodes}
+            gridRef={gridRef}
             onMenu={onMenu}
+            onResize={onResize}
           />,
         )
       } else {
         const isArmed =
-          node === null &&
           armedPosition !== null &&
           armedPosition.x === x &&
           armedPosition.y === y
         cells.push(
           <GridCell
-            key={id}
+            key={`e-${id}`}
             spaceId={spaceId}
-            node={node}
-            isContainer={node ? containerIds.has(node.id) : false}
+            node={null}
+            position={{ x, y }}
+            isContainer={false}
             isArmed={isArmed}
-            highlighted={node !== null && node.id === highlightId}
+            highlighted={false}
             onArm={() => onArm({ x, y })}
             onCreate={() => onCreate({ x, y })}
-            onEdit={() => {
-              if (node) onEdit(node)
-            }}
+            onEdit={() => undefined}
           />,
         )
       }
     }
   }
 
-  const inner = (
-    <div className="relative">
-      <div
-        ref={gridRef}
-        className="grid gap-1.5"
-        style={{
-          gridTemplateColumns: `repeat(${gridSize.width}, minmax(0, 1fr))`,
-        }}
-      >
-        {cells}
-      </div>
-      {editing && (
-        <ResizeHandle
-          gridRef={gridRef}
-          baseSize={gridSize}
-          minSize={minSize}
-          maxSize={maxSize}
-          onPreview={onResizePreview}
-          onCommit={onResizeCommit}
-        />
-      )}
+  const grid = (
+    <div
+      ref={gridRef}
+      className="grid gap-1.5"
+      style={{
+        gridTemplateColumns: `repeat(${gridSize.width}, minmax(0, 1fr))`,
+        gridTemplateRows: `repeat(${gridSize.height}, minmax(0, 1fr))`,
+        aspectRatio: `${gridSize.width} / ${gridSize.height}`,
+      }}
+    >
+      {cells}
     </div>
   )
 
@@ -141,11 +160,10 @@ export default function Grid({
     return (
       <div className="p-3">
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          {inner}
+          {grid}
         </DndContext>
       </div>
     )
   }
-
-  return <div className="p-3">{inner}</div>
+  return <div className="p-3">{grid}</div>
 }

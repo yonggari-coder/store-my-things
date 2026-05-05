@@ -57,6 +57,7 @@ describe('buildAncestorPath', () => {
     category: null,
     memo: null,
     position: { x: 0, y: 0 },
+    size: { width: 1, height: 1 },
     childGridSize: { width: 4, height: 4 },
     createdAt: 0,
     updatedAt: 0,

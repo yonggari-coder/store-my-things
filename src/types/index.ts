@@ -29,6 +29,7 @@ export interface MapNode {
   category: ID | null
   memo: string | null
   position: Position
+  size: GridSize
   childGridSize: GridSize
   createdAt: number
   updatedAt: number

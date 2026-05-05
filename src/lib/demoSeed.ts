@@ -21,6 +21,7 @@ export async function seedDemoNodes(spaceId: string): Promise<void> {
     category: null,
     memo: null,
     position: { x, y },
+    size: { width: 1, height: 1 },
     childGridSize: { width: 4, height: 4 },
     createdAt: now,
     updatedAt: now,

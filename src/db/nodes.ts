@@ -4,12 +4,14 @@ import { LOCAL_OWNER } from '../lib/owner'
 import { db } from './index'
 
 export const DEFAULT_GRID: GridSize = { width: 4, height: 4 }
+export const DEFAULT_NODE_SIZE: GridSize = { width: 1, height: 1 }
 
 export async function createNode(input: {
   spaceId: string
   parentId: string | null
   name: string
   position: Position
+  size?: GridSize
   color?: string | null
   category?: string | null
   memo?: string | null
@@ -26,6 +28,7 @@ export async function createNode(input: {
     category: input.category ?? null,
     memo: input.memo ?? null,
     position: input.position,
+    size: input.size ?? DEFAULT_NODE_SIZE,
     childGridSize: input.childGridSize ?? DEFAULT_GRID,
     createdAt: now,
     updatedAt: now,

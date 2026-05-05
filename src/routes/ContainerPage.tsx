@@ -1,17 +1,19 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Pencil } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import CellMenuSheet from '../components/CellMenuSheet'
 import ConfirmDialog from '../components/ConfirmDialog'
 import EmptyContainerHint from '../components/EmptyContainerHint'
 import Grid from '../components/Grid'
+import GridSizeStepper from '../components/GridSizeStepper'
 import NodeSheet from '../components/NodeSheet'
 import type { NodeSheetMode } from '../components/NodeSheet'
 import { db } from '../db'
 import { deleteNode, updateNode } from '../db/nodes'
 import { DEFAULT_ROOT_GRID, updateRootGridSize } from '../db/spaces'
+import { fitsAt, minRequiredGridSize } from '../lib/grid'
 import { getPath } from '../lib/path'
 import type { GridSize, MapNode, Position, Space } from '../types'
 
@@ -44,8 +46,6 @@ export default function ContainerPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [menuNode, setMenuNode] = useState<MapNode | null>(null)
   const [deleteNodeTarget, setDeleteNodeTarget] = useState<MapNode | null>(null)
-  const [previewSize, setPreviewSize] = useState<GridSize | null>(null)
-  const gridRef = useRef<HTMLDivElement>(null)
 
   if (!spaceId) {
     return <NotFoundMessage message="잘못된 주소입니다." />
@@ -73,7 +73,6 @@ export default function ContainerPage() {
     parentId === null
       ? (space?.rootGridSize ?? DEFAULT_ROOT_GRID)
       : (currentNode?.childGridSize ?? DEFAULT_ROOT_GRID)
-  const effectiveSize = previewSize ?? persistedSize
 
   const children = allInSpace.filter((n) => n.parentId === parentId)
 
@@ -85,13 +84,7 @@ export default function ContainerPage() {
   const armedHere =
     armed && armed.parentId === parentId ? armed.pos : null
 
-  // Min size = first integer that contains all current children
-  const maxX = children.reduce((m, n) => Math.max(m, n.position.x), -1)
-  const maxY = children.reduce((m, n) => Math.max(m, n.position.y), -1)
-  const minSize: GridSize = {
-    width: Math.max(1, maxX + 1),
-    height: Math.max(1, maxY + 1),
-  }
+  const minSize: GridSize = minRequiredGridSize(children)
 
   const handleArm = (pos: Position) => setArmed({ parentId, pos })
 
@@ -129,6 +122,7 @@ export default function ContainerPage() {
   }
 
   const handleDragSwap = async (sourcePos: Position, targetPos: Position) => {
+    if (sourcePos.x === targetPos.x && sourcePos.y === targetPos.y) return
     const sourceNode = children.find(
       (n) => n.position.x === sourcePos.x && n.position.y === sourcePos.y,
     )
@@ -136,9 +130,34 @@ export default function ContainerPage() {
     const targetNode = children.find(
       (n) => n.position.x === targetPos.x && n.position.y === targetPos.y,
     )
-    await db.transaction('rw', db.nodes, async () => {
-      const ts = Date.now()
-      if (targetNode) {
+    if (targetNode && targetNode.id !== sourceNode.id) {
+      const others = children.filter(
+        (n) => n.id !== sourceNode.id && n.id !== targetNode.id,
+      )
+      if (
+        !fitsAt(
+          sourceNode.id,
+          targetPos,
+          sourceNode.size,
+          persistedSize,
+          others,
+        )
+      ) {
+        return
+      }
+      if (
+        !fitsAt(
+          targetNode.id,
+          sourcePos,
+          targetNode.size,
+          persistedSize,
+          others,
+        )
+      ) {
+        return
+      }
+      await db.transaction('rw', db.nodes, async () => {
+        const ts = Date.now()
         await db.nodes.update(sourceNode.id, {
           position: targetPos,
           updatedAt: ts,
@@ -147,17 +166,29 @@ export default function ContainerPage() {
           position: sourcePos,
           updatedAt: ts,
         })
-      } else {
-        await db.nodes.update(sourceNode.id, {
-          position: targetPos,
-          updatedAt: ts,
-        })
+      })
+    } else {
+      const others = children.filter((n) => n.id !== sourceNode.id)
+      if (
+        !fitsAt(
+          sourceNode.id,
+          targetPos,
+          sourceNode.size,
+          persistedSize,
+          others,
+        )
+      ) {
+        return
       }
-    })
+      await updateNode(sourceNode.id, { position: targetPos })
+    }
   }
 
-  const handleResizeCommit = async (next: GridSize) => {
-    setPreviewSize(null)
+  const handleResize = async (nodeId: string, size: GridSize) => {
+    await updateNode(nodeId, { size })
+  }
+
+  const commitSize = async (next: GridSize) => {
     if (parentId === null) {
       await updateRootGridSize(spaceId, next)
     } else if (currentNode) {
@@ -167,10 +198,33 @@ export default function ContainerPage() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between px-4 pt-2 pb-1">
-        <span className="text-xs text-neutral-400">
-          {effectiveSize.width} × {effectiveSize.height}
-        </span>
+      <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1">
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <GridSizeStepper
+              label="열"
+              value={persistedSize.width}
+              min={minSize.width}
+              max={MAX_GRID.width}
+              onChange={(w) =>
+                commitSize({ width: w, height: persistedSize.height })
+              }
+            />
+            <GridSizeStepper
+              label="행"
+              value={persistedSize.height}
+              min={minSize.height}
+              max={MAX_GRID.height}
+              onChange={(h) =>
+                commitSize({ width: persistedSize.width, height: h })
+              }
+            />
+          </div>
+        ) : (
+          <span className="text-xs text-neutral-400">
+            {persistedSize.width} × {persistedSize.height}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -194,9 +248,8 @@ export default function ContainerPage() {
         <EmptyContainerHint spaceId={spaceId} isRoot={parentId === null} />
       ) : (
         <Grid
-          gridRef={gridRef}
           spaceId={spaceId}
-          gridSize={effectiveSize}
+          gridSize={persistedSize}
           nodes={children}
           containerIds={containerIds}
           editing={editing}
@@ -207,10 +260,7 @@ export default function ContainerPage() {
           onEdit={handleEditLeaf}
           onMenu={handleMenu}
           onDragSwap={handleDragSwap}
-          onResizePreview={setPreviewSize}
-          onResizeCommit={handleResizeCommit}
-          minSize={minSize}
-          maxSize={MAX_GRID}
+          onResize={handleResize}
         />
       )}
 
