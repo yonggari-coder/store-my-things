@@ -1,8 +1,27 @@
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import AppLayout from './components/AppLayout'
+import ContainerPage from './routes/ContainerPage'
+import NotFoundPage from './routes/NotFoundPage'
+import SearchPage from './routes/SearchPage'
+import SettingsPage from './routes/SettingsPage'
+import SpacesPage from './routes/SpacesPage'
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <AppLayout />,
+    errorElement: <NotFoundPage />,
+    children: [
+      { index: true, element: <SpacesPage /> },
+      { path: 's/:spaceId', element: <ContainerPage /> },
+      { path: 's/:spaceId/n/:nodeId', element: <ContainerPage /> },
+      { path: 'search', element: <SearchPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+])
+
 export default function App() {
-  return (
-    <main className="flex min-h-full flex-col items-center justify-center gap-2 bg-neutral-50 px-4 text-center text-neutral-900">
-      <h1 className="text-2xl font-semibold">Where Is My Phone</h1>
-      <p className="text-sm text-neutral-500">Stage 0 · 프로젝트 셋업 완료</p>
-    </main>
-  )
+  return <RouterProvider router={router} />
 }
