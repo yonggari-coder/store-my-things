@@ -51,15 +51,27 @@ src/
 ## 로드맵 (M1 = Web MVP)
 
 - [x] Stage 0 — 프로젝트 셋업
-- [ ] Stage 1 — 데이터 레이어 (Dexie + 시드)
-- [ ] Stage 2 — 라우팅 + 빈 화면 5개
-- [ ] Stage 3 — 공간 리스트(홈)
-- [ ] Stage 4 — 격자 뷰 표시
-- [ ] Stage 5 — 격자 뷰 추가/진입(NodeSheet)
-- [ ] Stage 6 — 편집 모드(드래그/리사이즈/삭제)
-- [ ] Stage 7 — 검색
-- [ ] Stage 8 — 카테고리 관리 + 설정 셸
-- [ ] Stage 9 — 내보내기/가져오기
-- [ ] Stage 10 — PWA화
+- [x] Stage 1 — 데이터 레이어 (Dexie + 시드)
+- [x] Stage 2 — 라우팅 + 빈 화면 5개
+- [x] Stage 3 — 공간 리스트(홈)
+- [x] Stage 4 — 격자 뷰 표시
+- [x] Stage 5 — 격자 뷰 추가/진입(NodeSheet)
+- [x] Stage 6 — 편집 모드(드래그/리사이즈/삭제)
+- [x] Stage 7 — 검색
+- [x] Stage 8 — 카테고리 관리 + 설정 셸
+- [x] Stage 9 — 내보내기/가져오기
+- [x] Stage 10 — PWA화
 
-M1 완료 후 사용 검증 → M2(Capacitor + Play Store) 진행 여부 결정.
+**M1 완료** — 본인이 사용해보고 v2 우선순위 재평가 후 M2(Capacitor + Play Store) 진행 여부 결정.
+
+## PWA 동작 확인
+
+```bash
+npm run build
+npm run preview
+```
+
+- `npm run dev` 에선 PWA(서비스 워커)가 비활성 — 개발 중 캐시 혼란 방지
+- `npm run preview` 가 `dist/`를 서빙하며 SW 등록. 비행기 모드 / 오프라인에서 앱이 그대로 뜨는지 확인.
+- 모바일 Chrome → 사이트 메뉴 → "홈 화면에 추가"
+- Play Store 출시 (M2) 시점에 `@capacitor/assets`로 PNG 아이콘 생성 필요 (현재 SVG로만 제공)
