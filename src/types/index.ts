@@ -4,6 +4,7 @@ export interface Space {
   id: ID
   name: string
   ownerId: string
+  rootGridSize?: GridSize
   createdAt: number
   updatedAt: number
 }
