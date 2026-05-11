@@ -1,11 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Pencil } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import CellMenuSheet from '../components/CellMenuSheet'
 import ConfirmDialog from '../components/ConfirmDialog'
-import EmptyContainerHint from '../components/EmptyContainerHint'
 import Grid from '../components/Grid'
 import GridSizeStepper from '../components/GridSizeStepper'
 import NodeSheet from '../components/NodeSheet'
@@ -13,7 +11,7 @@ import type { NodeSheetMode } from '../components/NodeSheet'
 import { db } from '../db'
 import { deleteNode, updateNode } from '../db/nodes'
 import { DEFAULT_ROOT_GRID, updateRootGridSize } from '../db/spaces'
-import { fitsAt, minRequiredGridSize } from '../lib/grid'
+import { buildOccupancy, fitsAt, minRequiredGridSize } from '../lib/grid'
 import { getPath } from '../lib/path'
 import type { GridSize, MapNode, Position, Space } from '../types'
 
@@ -24,8 +22,6 @@ const MAX_GRID: GridSize = { width: 12, height: 12 }
 export default function ContainerPage() {
   const { spaceId, nodeId } = useParams()
   const parentId = nodeId ?? null
-  const [searchParams] = useSearchParams()
-  const highlightId = searchParams.get('highlight')
 
   const path = useLiveQuery(
     async () => (spaceId ? getPath(spaceId, parentId) : []),
@@ -40,7 +36,6 @@ export default function ContainerPage() {
     [spaceId],
   )
 
-  const [editing, setEditing] = useState(false)
   const [armed, setArmed] = useState<ArmedCell | null>(null)
   const [sheetMode, setSheetMode] = useState<NodeSheetMode | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -94,12 +89,6 @@ export default function ContainerPage() {
     setSheetOpen(true)
   }
 
-  const handleEditLeaf = (node: MapNode) => {
-    setArmed(null)
-    setSheetMode({ kind: 'edit', node })
-    setSheetOpen(true)
-  }
-
   const handleMenu = (node: MapNode) => setMenuNode(node)
 
   const handleMenuEdit = () => {
@@ -127,9 +116,12 @@ export default function ContainerPage() {
       (n) => n.position.x === sourcePos.x && n.position.y === sourcePos.y,
     )
     if (!sourceNode) return
-    const targetNode = children.find(
-      (n) => n.position.x === targetPos.x && n.position.y === targetPos.y,
-    )
+    const occ = buildOccupancy(children)
+    const targetOwnerId = occ.get(`${targetPos.x},${targetPos.y}`)
+    const targetNode =
+      targetOwnerId && targetOwnerId !== sourceNode.id
+        ? (children.find((n) => n.id === targetOwnerId) ?? null)
+        : null
     if (targetNode && targetNode.id !== sourceNode.id) {
       const others = children.filter(
         (n) => n.id !== sourceNode.id && n.id !== targetNode.id,
@@ -198,71 +190,40 @@ export default function ContainerPage() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between gap-2 px-4 pt-2 pb-1">
-        {editing ? (
-          <div className="flex items-center gap-2">
-            <GridSizeStepper
-              label="열"
-              value={persistedSize.width}
-              min={minSize.width}
-              max={MAX_GRID.width}
-              onChange={(w) =>
-                commitSize({ width: w, height: persistedSize.height })
-              }
-            />
-            <GridSizeStepper
-              label="행"
-              value={persistedSize.height}
-              min={minSize.height}
-              max={MAX_GRID.height}
-              onChange={(h) =>
-                commitSize({ width: persistedSize.width, height: h })
-              }
-            />
-          </div>
-        ) : (
-          <span className="text-xs text-neutral-400">
-            {persistedSize.width} × {persistedSize.height}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            setEditing((prev) => !prev)
-            setArmed(null)
-          }}
-          className={
-            editing
-              ? 'flex items-center gap-1 rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white'
-              : 'flex items-center gap-1 rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-700 active:bg-neutral-200'
+      <div className="flex items-center gap-2 px-4 pt-2 pb-1">
+        <GridSizeStepper
+          label="열"
+          value={persistedSize.width}
+          min={minSize.width}
+          max={MAX_GRID.width}
+          onChange={(w) =>
+            commitSize({ width: w, height: persistedSize.height })
           }
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          {editing ? '완료' : '편집'}
-        </button>
+        />
+        <GridSizeStepper
+          label="행"
+          value={persistedSize.height}
+          min={minSize.height}
+          max={MAX_GRID.height}
+          onChange={(h) =>
+            commitSize({ width: persistedSize.width, height: h })
+          }
+        />
       </div>
 
       <Breadcrumb path={path} spaceId={spaceId} />
 
-      {children.length === 0 && !editing ? (
-        <EmptyContainerHint spaceId={spaceId} isRoot={parentId === null} />
-      ) : (
-        <Grid
-          spaceId={spaceId}
-          gridSize={persistedSize}
-          nodes={children}
-          containerIds={containerIds}
-          editing={editing}
-          armedPosition={armedHere}
-          highlightId={highlightId}
-          onArm={handleArm}
-          onCreate={handleCreate}
-          onEdit={handleEditLeaf}
-          onMenu={handleMenu}
-          onDragSwap={handleDragSwap}
-          onResize={handleResize}
-        />
-      )}
+      <Grid
+        gridSize={persistedSize}
+        nodes={children}
+        containerIds={containerIds}
+        armedPosition={armedHere}
+        onArm={handleArm}
+        onCreate={handleCreate}
+        onMenu={handleMenu}
+        onDragSwap={handleDragSwap}
+        onResize={handleResize}
+      />
 
       <NodeSheet
         open={sheetOpen}
