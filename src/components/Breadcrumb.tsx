@@ -17,8 +17,8 @@ export default function Breadcrumb({
           seg.kind === 'space' ? seg.space.name : seg.node.name
         const to =
           seg.kind === 'space'
-            ? `/s/${seg.space.id}`
-            : `/s/${spaceId}/n/${seg.node.id}`
+            ? `/app/s/${seg.space.id}`
+            : `/app/s/${spaceId}/n/${seg.node.id}`
         const key = seg.kind === 'space' ? `s:${seg.space.id}` : `n:${seg.node.id}`
         return (
           <Fragment key={key}>

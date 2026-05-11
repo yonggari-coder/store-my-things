@@ -15,7 +15,7 @@ export default function CategoriesPage() {
     <>
       <header className="flex items-center gap-2 px-4 pt-3 pb-2">
         <Link
-          to="/settings"
+          to="/app/settings"
           className="flex h-8 w-8 items-center justify-center text-neutral-500 active:bg-neutral-100"
           aria-label="뒤로"
         >

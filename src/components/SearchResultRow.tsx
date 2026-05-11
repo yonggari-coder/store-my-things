@@ -10,8 +10,8 @@ export default function SearchResultRow({
 }) {
   const target =
     node.parentId === null
-      ? `/s/${node.spaceId}?highlight=${node.id}`
-      : `/s/${node.spaceId}/n/${node.parentId}?highlight=${node.id}`
+      ? `/app/s/${node.spaceId}?highlight=${node.id}`
+      : `/app/s/${node.spaceId}/n/${node.parentId}?highlight=${node.id}`
 
   const dot = node.color ?? '#a3a3a3'
 

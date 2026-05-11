@@ -316,7 +316,7 @@ export default function EditableGridCell({
       </button>
 
       <Link
-        to={`/s/${currentNode.spaceId}/n/${currentNode.id}`}
+        to={`/app/s/${currentNode.spaceId}/n/${currentNode.id}`}
         onClick={stopClick}
         style={{
           ...cornerBtnBase,

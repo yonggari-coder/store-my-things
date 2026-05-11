@@ -83,11 +83,11 @@ export default function ContainerPage() {
 
   const parentHref: string | null =
     parentId === null
-      ? '/'
+      ? '/app'
       : currentNode
         ? currentNode.parentId === null
-          ? `/s/${spaceId}`
-          : `/s/${spaceId}/n/${currentNode.parentId}`
+          ? `/app/s/${spaceId}`
+          : `/app/s/${spaceId}/n/${currentNode.parentId}`
         : null
 
   const handleArm = (pos: Position) => setArmed({ parentId, pos })
@@ -217,7 +217,7 @@ function NotFoundMessage({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-start gap-2 p-4">
       <p className="text-sm text-neutral-500">{message}</p>
-      <Link to="/" className="text-sm text-blue-600 hover:underline">
+      <Link to="/app" className="text-sm text-blue-600 hover:underline">
         ← 공간 목록으로
       </Link>
     </div>

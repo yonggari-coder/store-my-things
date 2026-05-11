@@ -2,14 +2,16 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import CategoriesPage from './routes/CategoriesPage'
 import ContainerPage from './routes/ContainerPage'
+import LandingPage from './routes/LandingPage'
 import NotFoundPage from './routes/NotFoundPage'
 import SearchPage from './routes/SearchPage'
 import SettingsPage from './routes/SettingsPage'
 import SpacesPage from './routes/SpacesPage'
 
 const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
   {
-    path: '/',
+    path: '/app',
     element: <AppLayout />,
     errorElement: <NotFoundPage />,
     children: [
@@ -22,6 +24,7 @@ const router = createBrowserRouter([
       { path: '*', element: <NotFoundPage /> },
     ],
   },
+  { path: '*', element: <NotFoundPage /> },
 ])
 
 export default function App() {

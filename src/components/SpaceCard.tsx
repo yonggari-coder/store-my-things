@@ -23,7 +23,7 @@ export default function SpaceCard({ space }: { space: Space }) {
     <>
       <li className="flex items-center rounded-xl border border-neutral-200 bg-white">
         <Link
-          to={`/s/${space.id}`}
+          to={`/app/s/${space.id}`}
           className="flex flex-1 flex-col gap-0.5 px-4 py-3 active:bg-neutral-50"
         >
           <h2 className="text-base font-medium">{space.name}</h2>

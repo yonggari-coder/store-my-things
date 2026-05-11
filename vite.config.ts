@@ -28,7 +28,7 @@ export default defineConfig({
         background_color: '#fafafa',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '/app',
         scope: '/',
         icons: [
           {

@@ -84,7 +84,7 @@ export default function SettingsPage() {
 
       <Section title="콘텐츠">
         <SettingLink
-          to="/settings/categories"
+          to="/app/settings/categories"
           icon={<Tag className="h-4 w-4 text-neutral-500" />}
           label="카테고리 관리"
         />

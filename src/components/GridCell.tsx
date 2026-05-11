@@ -71,7 +71,7 @@ export default function GridCell({
   if (isContainer) {
     return (
       <Link
-        to={`/s/${spaceId}/n/${node.id}`}
+        to={`/app/s/${spaceId}/n/${node.id}`}
         className={baseClasses}
         style={{ ...placement, backgroundColor: tint, borderColor: border }}
       >

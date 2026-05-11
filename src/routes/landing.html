@@ -1,0 +1,938 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --paper: #f1ecdf;
+  --paper-deep: #e8e1d0;
+  --ink: #1a1e24;
+  --ink-soft: #4a4e55;
+  --ink-faint: rgba(26, 30, 36, 0.45);
+  --grid: rgba(26, 30, 36, 0.07);
+  --grid-strong: rgba(26, 30, 36, 0.14);
+  --rust: #b8542a;
+  --rust-deep: #8e3f1e;
+  --blueprint: #4a6e8f;
+  --sage: #6b7f5c;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans KR', 'Helvetica Neue', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at top left, rgba(184, 84, 42, 0.04), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(74, 110, 143, 0.05), transparent 50%);
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+  z-index: 1;
+}
+
+.wrap { position: relative; z-index: 2; }
+
+a { color: inherit; }
+
+/* ============ NAV ============ */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  background: rgba(241, 236, 223, 0.78);
+  border-bottom: 1px solid var(--grid-strong);
+}
+
+.nav-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 18px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Instrument Serif', serif;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--ink);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.brand-mark::before, .brand-mark::after { content: ''; background: var(--ink); }
+.brand-mark::before { grid-column: 1; grid-row: 1; }
+.brand-mark::after { grid-column: 2; grid-row: 2; background: var(--rust); }
+
+.brand em { font-style: italic; color: var(--rust); }
+
+.nav-links {
+  display: flex;
+  gap: 36px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+.nav-links a { text-decoration: none; transition: color 0.2s; }
+.nav-links a:hover { color: var(--rust); }
+
+.nav-cta {
+  padding: 9px 20px;
+  background: var(--ink);
+  color: var(--paper) !important;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  transition: all 0.2s;
+}
+.nav-cta:hover { background: var(--rust) !important; }
+
+/* ============ HERO ============ */
+.hero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 80px 40px 60px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rust);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.eyebrow::before { content: ''; width: 36px; height: 1px; background: var(--rust); }
+
+h1.headline {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(48px, 6.4vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 28px;
+}
+h1.headline em { font-style: italic; color: var(--rust); }
+h1.headline .small {
+  font-family: 'Gowun Batang', serif;
+  display: block;
+  font-size: 0.4em;
+  margin-top: 18px;
+  color: var(--ink-soft);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  font-weight: 400;
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--ink-soft);
+  max-width: 480px;
+  line-height: 1.7;
+  margin-bottom: 40px;
+}
+.lede strong { color: var(--ink); font-weight: 500; }
+
+.cta-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.btn-primary {
+  padding: 16px 28px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  font-family: 'IBM Plex Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after { content: '↗'; transition: transform 0.25s; }
+.btn-primary:hover { background: var(--rust); }
+.btn-primary:hover::after { transform: translate(3px, -3px); }
+
+.btn-ghost {
+  padding: 16px 4px;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-family: 'IBM Plex Sans KR', sans-serif;
+  font-size: 14px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { color: var(--rust); border-color: var(--rust); }
+
+.meta-row {
+  display: flex;
+  gap: 32px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  padding-top: 28px;
+  border-top: 1px solid var(--grid-strong);
+}
+.meta-row span strong { color: var(--ink); font-weight: 500; margin-left: 8px; }
+
+/* ============ FLOOR PLAN VISUAL ============ */
+.plan-frame {
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  background: var(--paper-deep);
+  border: 1px solid var(--grid-strong);
+  padding: 24px;
+  box-shadow:
+    0 1px 0 rgba(26, 30, 36, 0.04),
+    0 30px 60px -30px rgba(26, 30, 36, 0.18);
+}
+.plan-frame::before {
+  content: 'PLAN_001';
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+}
+.plan-frame::after {
+  content: '8.4 × 7.2 m';
+  position: absolute;
+  bottom: 14px;
+  left: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+}
+.plan-svg { width: 100%; height: 100%; display: block; }
+
+.find-tag {
+  position: absolute;
+  top: 38%;
+  left: 56%;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 7px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: floatTag 3s ease-in-out infinite;
+  pointer-events: none;
+}
+.find-tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--rust);
+  border-radius: 50%;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.find-tag::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 14px;
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid var(--ink);
+}
+
+@keyframes floatTag {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(184, 84, 42, 0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(184, 84, 42, 0); }
+}
+
+/* ============ SECTIONS / STEPS ============ */
+.section {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 100px 40px;
+}
+
+.section-head {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 80px;
+  margin-bottom: 80px;
+  align-items: end;
+}
+
+.section-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(36px, 4.4vw, 60px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.section-title em { font-style: italic; color: var(--rust); }
+
+.section-intro {
+  font-size: 16px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  max-width: 540px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--grid-strong);
+  border: 1px solid var(--grid-strong);
+}
+
+.step {
+  background: var(--paper);
+  padding: 40px 32px;
+  position: relative;
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--rust);
+  margin-bottom: 24px;
+}
+
+.step-visual {
+  margin-bottom: 24px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step h3 {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+.step h3 .ko {
+  font-family: 'Gowun Batang', serif;
+  display: block;
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+}
+
+.step p {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  margin-top: auto;
+}
+
+.icon-pencil, .icon-grid-place, .icon-search { width: 110px; height: 110px; }
+
+/* ============ FEATURES ============ */
+.features-section { background: rgba(232, 225, 208, 0.4); }
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 48px 40px;
+}
+
+.feature { border-top: 1px solid var(--ink); padding-top: 24px; }
+.feature-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--rust);
+  margin-bottom: 16px;
+}
+.feature h4 {
+  font-family: 'Gowun Batang', serif;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+.feature p { font-size: 13.5px; color: var(--ink-soft); line-height: 1.6; }
+
+/* ============ BIG QUOTE ============ */
+.quote-section {
+  text-align: center;
+  padding: 140px 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+}
+.quote-section::before, .quote-section::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 60px;
+  background: var(--ink);
+}
+.quote-section::before { top: 40px; }
+.quote-section::after { bottom: 40px; }
+
+.quote-mark {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 80px;
+  color: var(--rust);
+  line-height: 0.5;
+  margin-bottom: 30px;
+}
+.quote-text {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(28px, 3.4vw, 48px);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin-bottom: 24px;
+}
+.quote-text em { font-style: italic; color: var(--rust); }
+.quote-sub {
+  font-family: 'Gowun Batang', serif;
+  font-size: 17px;
+  color: var(--ink-soft);
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ============ CTA ============ */
+.cta-section {
+  max-width: 1240px;
+  margin: 0 auto 100px;
+  padding: 0 40px;
+}
+.cta-box {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 80px 60px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 60px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(241, 236, 223, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(241, 236, 223, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.cta-content { position: relative; z-index: 1; }
+.cta-content .eyebrow { color: rgba(241, 236, 223, 0.6); }
+.cta-content .eyebrow::before { background: rgba(241, 236, 223, 0.4); }
+.cta-content h2 {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: clamp(36px, 4vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+.cta-content h2 em { font-style: italic; color: #e08866; }
+.cta-content p {
+  font-family: 'Gowun Batang', serif;
+  font-size: 16px;
+  color: rgba(241, 236, 223, 0.7);
+  max-width: 420px;
+  line-height: 1.6;
+}
+.cta-action {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+.cta-go {
+  padding: 18px 30px;
+  background: var(--rust);
+  color: var(--paper);
+  text-decoration: none;
+  font-family: 'IBM Plex Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.25s;
+}
+.cta-go::after { content: '→'; transition: transform 0.25s; }
+.cta-go:hover { background: var(--rust-deep); }
+.cta-go:hover::after { transform: translateX(4px); }
+.cta-note {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(241, 236, 223, 0.45);
+  text-transform: uppercase;
+}
+
+/* ============ FOOTER ============ */
+footer { border-top: 1px solid var(--grid-strong); padding: 40px; }
+.footer-inner {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+.footer-inner a { text-decoration: none; margin-left: 24px; }
+.footer-inner a:hover { color: var(--rust); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; gap: 60px; padding: 50px 24px 40px; }
+  .section { padding: 70px 24px; }
+  .section-head { grid-template-columns: 1fr; gap: 24px; margin-bottom: 50px; }
+  .steps { grid-template-columns: 1fr; }
+  .step { min-height: 0; }
+  .features { grid-template-columns: repeat(2, 1fr); gap: 36px 24px; }
+  .cta-box { grid-template-columns: 1fr; padding: 50px 28px; gap: 32px; }
+  .cta-section { padding: 0 24px; margin-bottom: 60px; }
+  .nav-inner { padding: 14px 24px; }
+  .nav-links { gap: 18px; font-size: 13px; }
+  .nav-links a:not(.nav-cta) { display: none; }
+  .meta-row { flex-wrap: wrap; gap: 16px; }
+  footer { padding: 30px 24px; }
+  .footer-inner { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .footer-inner div a { margin-left: 0; margin-right: 18px; }
+}
+@media (max-width: 540px) {
+  .features { grid-template-columns: 1fr; }
+  .cta-row { flex-direction: column; align-items: stretch; }
+  .btn-primary, .btn-ghost { justify-content: center; text-align: center; }
+}
+
+/* ============ ENTRANCE ANIMATIONS ============ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes drawIn {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.hero > div > * { animation: fadeUp 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
+.hero .eyebrow { animation-delay: 0.05s; }
+.hero h1 { animation-delay: 0.15s; }
+.hero .lede { animation-delay: 0.3s; }
+.hero .cta-row { animation-delay: 0.4s; }
+.hero .meta-row { animation-delay: 0.5s; }
+.plan-frame { animation: fadeUp 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s backwards; }
+
+.plan-svg .walls path { stroke-dasharray: 1500; animation: drawIn 2s ease-out 0.5s backwards; }
+
+.plan-svg .item { animation: fadeUp 0.5s ease-out backwards; }
+.plan-svg .item:nth-of-type(1) { animation-delay: 1.0s; }
+.plan-svg .item:nth-of-type(2) { animation-delay: 1.15s; }
+.plan-svg .item:nth-of-type(3) { animation-delay: 1.3s; }
+.plan-svg .item:nth-of-type(4) { animation-delay: 1.45s; }
+.plan-svg .item:nth-of-type(5) { animation-delay: 1.6s; }
+.plan-svg .item:nth-of-type(6) { animation-delay: 1.75s; }
+.plan-svg .item:nth-of-type(7) { animation-delay: 1.9s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero > div > *, .plan-frame, .plan-svg .walls path, .plan-svg .item,
+  .find-tag, .find-tag::before { animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        Where is my <em>phone</em>
+      </div>
+      <div class="nav-links">
+        <a href="#how">작동 방식</a>
+        <a href="#features">특징</a>
+        <a href="/app" class="nav-cta">체험해보기</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <div class="eyebrow">2D Grid · Indoor Item Tracker</div>
+      <h1 class="headline">
+        집을 그리고,<br/>
+        물건의 <em>자리</em>를<br/>
+        기억하세요.
+        <span class="small">2D 그리드 위에 우리집을 그리고,<br/>물건을 정확한 칸에 놓아두는 정리 도구.</span>
+      </h1>
+      <p class="lede">
+        리모컨, 여권, 충전기, 그리고 또 사라진 핸드폰까지.
+        <strong>Where is my phone</strong>은 직접 그린 2D 평면도 위에
+        물건을 칸칸이 배치해서, 다음에 어디서 찾아야 할지 대신 기억해 둡니다.
+      </p>
+      <div class="cta-row">
+        <a href="/app" class="btn-primary">체험해보기</a>
+        <a href="#how" class="btn-ghost">작동 방식 보기</a>
+      </div>
+      <div class="meta-row">
+        <span>방식 <strong>2D 그리드</strong></span>
+        <span>저장 <strong>기기 안 · 오프라인</strong></span>
+        <span>플랫폼 <strong>웹 · PWA</strong></span>
+      </div>
+    </div>
+
+    <!-- FLOOR PLAN -->
+    <div class="plan-frame">
+      <svg class="plan-svg" viewBox="0 0 400 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="물건이 칸마다 놓인 2D 평면도 예시">
+        <defs>
+          <pattern id="innergrid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(26,30,36,0.08)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect x="20" y="20" width="360" height="380" fill="url(#innergrid)"/>
+
+        <!-- WALLS / ROOMS -->
+        <g class="walls" fill="none" stroke="#1a1e24" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter">
+          <path d="M 20 20 L 380 20 L 380 400 L 20 400 Z"/>
+          <path d="M 20 200 L 380 200"/>
+          <path d="M 220 20 L 220 140"/>
+          <path d="M 220 170 L 220 200"/>
+          <path d="M 20 280 L 140 280"/>
+          <path d="M 140 200 L 140 280"/>
+          <path d="M 280 200 L 280 320"/>
+          <path d="M 280 320 L 380 320"/>
+        </g>
+
+        <!-- ROOM LABELS -->
+        <g font-family="IBM Plex Mono, monospace" font-size="8.5" fill="rgba(26,30,36,0.55)" letter-spacing="1.2">
+          <text x="32" y="38">LIVING ROOM · 거실</text>
+          <text x="232" y="38">BEDROOM · 침실</text>
+          <text x="32" y="218">BATHROOM · 욕실</text>
+          <text x="152" y="218">HALLWAY · 복도</text>
+          <text x="292" y="218">KITCHEN · 주방</text>
+          <text x="32" y="298">ENTRY · 현관</text>
+          <text x="292" y="338">UTILITY · 베란다</text>
+        </g>
+
+        <!-- FURNITURE OUTLINES -->
+        <g fill="none" stroke="rgba(26,30,36,0.4)" stroke-width="1" stroke-dasharray="3 2">
+          <rect x="40" y="120" width="120" height="40" rx="3"/>
+          <rect x="70" y="80" width="60" height="20" rx="2"/>
+          <rect x="290" y="60" width="70" height="100" rx="3"/>
+          <rect x="260" y="60" width="22" height="30" rx="1"/>
+          <rect x="300" y="230" width="60" height="20" rx="1"/>
+          <rect x="40" y="240" width="22" height="28" rx="2"/>
+          <rect x="100" y="240" width="30" height="20" rx="2"/>
+          <rect x="40" y="360" width="60" height="14" rx="1"/>
+        </g>
+
+        <!-- ITEMS -->
+        <g class="item" transform="translate(125, 130)">
+          <rect x="-9" y="-13" width="18" height="26" rx="2" fill="#b8542a" stroke="#1a1e24" stroke-width="1"/>
+          <rect x="-6" y="-10" width="12" height="18" fill="rgba(241,236,223,0.85)"/>
+          <circle cx="0" cy="11" r="1.4" fill="#1a1e24"/>
+        </g>
+        <g class="item" transform="translate(100, 90)">
+          <rect x="-4" y="-10" width="8" height="20" rx="2" fill="#1a1e24"/>
+          <circle cx="0" cy="-6" r="1.2" fill="#b8542a"/>
+        </g>
+        <g class="item" transform="translate(70, 367)">
+          <circle cx="0" cy="0" r="3.5" fill="none" stroke="#4a6e8f" stroke-width="1.6"/>
+          <path d="M 3 0 L 10 0 L 10 2 M 8 0 L 8 2.5" stroke="#4a6e8f" stroke-width="1.6" fill="none"/>
+        </g>
+        <g class="item" transform="translate(271, 75)">
+          <path d="M 0 0 Q 6 4 4 10 Q 0 14 6 18" fill="none" stroke="#6b7f5c" stroke-width="1.4"/>
+          <rect x="-2" y="-3" width="4" height="4" fill="#6b7f5c"/>
+        </g>
+        <g class="item" transform="translate(330, 240)">
+          <path d="M -5 -4 L 5 -4 L 4 6 L -4 6 Z" fill="none" stroke="#1a1e24" stroke-width="1.4"/>
+          <path d="M 5 -2 Q 10 -2 10 2 Q 10 4 5 4" fill="none" stroke="#1a1e24" stroke-width="1.4"/>
+        </g>
+        <g class="item" transform="translate(345, 110)">
+          <rect x="-7" y="-9" width="14" height="18" rx="1" fill="#4a6e8f" stroke="#1a1e24" stroke-width="1"/>
+          <line x1="-3" y1="-2" x2="3" y2="-2" stroke="rgba(241,236,223,0.7)" stroke-width="0.8"/>
+          <line x1="-3" y1="1" x2="3" y2="1" stroke="rgba(241,236,223,0.7)" stroke-width="0.8"/>
+          <line x1="-3" y1="4" x2="3" y2="4" stroke="rgba(241,236,223,0.7)" stroke-width="0.8"/>
+        </g>
+        <g class="item" transform="translate(115, 250)">
+          <rect x="-1" y="-7" width="2" height="14" fill="#1a1e24"/>
+          <rect x="-2" y="-9" width="4" height="3" fill="#6b7f5c"/>
+        </g>
+
+        <!-- coordinate marker for phone -->
+        <g stroke="#b8542a" stroke-width="1" stroke-dasharray="2 2" fill="none">
+          <line x1="125" y1="20" x2="125" y2="117"/>
+          <line x1="20" y1="130" x2="113" y2="130"/>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="8" fill="#b8542a" letter-spacing="0.8">
+          <text x="128" y="32">x: 4</text>
+          <text x="26" y="126">y: 6</text>
+        </g>
+      </svg>
+
+      <div class="find-tag">my phone · 거실 소파</div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how">
+    <div class="section-head">
+      <h2 class="section-title">작동<br/>방식 <em>—</em></h2>
+      <p class="section-intro">
+        복잡한 등록 절차는 없습니다. 종이에 집을 그리듯 평면을 스케치하고, 그 위에 칸 단위로 물건을 놓아두기만 하면 됩니다. 그게 전부예요.
+      </p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">STEP 01</div>
+        <div class="step-visual">
+          <svg class="icon-pencil" viewBox="0 0 110 110" fill="none">
+            <rect x="15" y="20" width="80" height="60" stroke="#1a1e24" stroke-width="1.8"/>
+            <line x1="55" y1="20" x2="55" y2="50" stroke="#1a1e24" stroke-width="1.8"/>
+            <line x1="55" y1="50" x2="95" y2="50" stroke="#1a1e24" stroke-width="1.8"/>
+            <g transform="translate(70, 65) rotate(-30)">
+              <rect x="0" y="0" width="32" height="6" fill="#b8542a" stroke="#1a1e24" stroke-width="1.2"/>
+              <polygon points="32,0 40,3 32,6" fill="#1a1e24"/>
+              <rect x="0" y="0" width="4" height="6" fill="#1a1e24"/>
+            </g>
+            <g fill="rgba(26,30,36,0.25)">
+              <circle cx="30" cy="35" r="0.8"/>
+              <circle cx="45" cy="35" r="0.8"/>
+              <circle cx="30" cy="65" r="0.8"/>
+              <circle cx="45" cy="65" r="0.8"/>
+              <circle cx="75" cy="35" r="0.8"/>
+            </g>
+          </svg>
+        </div>
+        <h3>Sketch<span class="ko">집 구조 그리기</span></h3>
+        <p>공간을 만들고 그리드 크기를 정합니다. 칸을 늘리고 합쳐서 거실, 침실, 욕실, 현관 — 원하는 만큼 방을 나누세요.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">STEP 02</div>
+        <div class="step-visual">
+          <svg class="icon-grid-place" viewBox="0 0 110 110" fill="none">
+            <g stroke="#1a1e24" stroke-width="1.2">
+              <rect x="15" y="15" width="80" height="80"/>
+              <line x1="35" y1="15" x2="35" y2="95"/>
+              <line x1="55" y1="15" x2="55" y2="95"/>
+              <line x1="75" y1="15" x2="75" y2="95"/>
+              <line x1="15" y1="35" x2="95" y2="35"/>
+              <line x1="15" y1="55" x2="95" y2="55"/>
+              <line x1="15" y1="75" x2="95" y2="75"/>
+            </g>
+            <rect x="38" y="38" width="14" height="14" fill="#b8542a" stroke="#1a1e24" stroke-width="1"/>
+            <rect x="58" y="58" width="14" height="14" fill="rgba(184,84,42,0.3)" stroke="#1a1e24" stroke-width="1" stroke-dasharray="2 2"/>
+            <path d="M 65 65 Q 56 52 47 47" stroke="#1a1e24" stroke-width="1" stroke-dasharray="2 2" fill="none"/>
+            <circle cx="45" cy="45" r="2" fill="#1a1e24"/>
+          </svg>
+        </div>
+        <h3>Place<span class="ko">물건 놓기</span></h3>
+        <p>여권, 충전기, 리모컨, 자전거 키 — 칸 위에 끌어다 놓고 이름·색·카테고리를 답니다. 박스 안으로 한 단계 더 들어갈 수도 있어요.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-num">STEP 03</div>
+        <div class="step-visual">
+          <svg class="icon-search" viewBox="0 0 110 110" fill="none">
+            <rect x="20" y="25" width="50" height="50" stroke="#1a1e24" stroke-width="1.6"/>
+            <line x1="20" y1="50" x2="70" y2="50" stroke="#1a1e24" stroke-width="1.6"/>
+            <line x1="45" y1="25" x2="45" y2="50" stroke="#1a1e24" stroke-width="1.6"/>
+            <rect x="48" y="28" width="20" height="20" fill="rgba(184,84,42,0.15)"/>
+            <circle cx="58" cy="38" r="3" fill="#b8542a" stroke="#1a1e24" stroke-width="1"/>
+            <circle cx="74" cy="78" r="14" stroke="#1a1e24" stroke-width="2" fill="rgba(241,236,223,0.9)"/>
+            <line x1="84" y1="88" x2="95" y2="99" stroke="#1a1e24" stroke-width="3" stroke-linecap="round"/>
+            <text x="69" y="83" font-family="IBM Plex Mono, monospace" font-size="13" fill="#1a1e24">?</text>
+          </svg>
+        </div>
+        <h3>Find<span class="ko">다시 찾기</span></h3>
+        <p>"여권 어디 뒀더라?" 검색창에 한 마디만 치면, 평면도 위에 정확한 칸이 빛납니다. 더 이상 서랍을 다 뒤집지 않아도 돼요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUOTE -->
+  <section class="quote-section">
+    <div class="quote-mark">"</div>
+    <p class="quote-text">
+      집은 기억이 아니라<br/>
+      <em>좌표</em>로 정리될 수 있다.
+    </p>
+    <p class="quote-sub">
+      서랍을 전부 뒤집는 대신, 평면도 위의 한 칸을 보세요.
+      어디에 뒀는지는 더 이상 외울 필요가 없습니다.
+    </p>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section features-section" id="features">
+    <div class="section-head">
+      <h2 class="section-title">담긴 <em>도구들</em></h2>
+      <p class="section-intro">
+        평면 스케치, 그리드 배치, 색·카테고리 라벨, 백업·이전까지. 필요한 것만 정확히 담았습니다.
+      </p>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-num">01</div>
+        <h4>그리드로 그리는 평면</h4>
+        <p>자나 줄자 없이 우리집 구조를 1분 안에. 칸을 늘리고 합쳐 방·가구·서랍을 표현하세요.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">02</div>
+        <h4>칸 단위 배치</h4>
+        <p>물건을 정확한 칸에 끌어다 놓으면 정렬은 자동입니다. 길게 눌러 옮기고, 모서리로 크기 조절.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">03</div>
+        <h4>박스 안의 박스</h4>
+        <p>집 → 안방 → 옷장 → 서랍 → 지갑. 박스 안으로 원하는 만큼 깊이 들어갈 수 있습니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">04</div>
+        <h4>색·카테고리·메모</h4>
+        <p>물건마다 색과 카테고리로 한눈에 구분하고, 짧은 메모를 함께 남겨 두세요.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">05</div>
+        <h4>한 마디 검색</h4>
+        <p>"여권" 한 단어면 평면도 위 그 칸이 빛납니다. 경로(집 › 안방 › 서랍)까지 한 번에.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">06</div>
+        <h4>JSON 백업·이전</h4>
+        <p>모든 공간과 물건을 한 파일로 내보내고, 새 기기에서 그대로 가져옵니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">07</div>
+        <h4>오프라인 작동</h4>
+        <p>인터넷이 끊겨도 평면도와 물건 정보는 그대로. 데이터는 이 기기에만 저장됩니다.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-num">08</div>
+        <h4>여러 공간 관리</h4>
+        <p>본가, 자취방, 사무실까지. 여러 개의 평면을 하나의 앱에서 따로따로 관리하세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="start">
+    <div class="cta-box">
+      <div class="cta-content">
+        <div class="eyebrow">지금 시작하기</div>
+        <h2>오늘 둔 자리를,<br/><em>내일의 나</em>에게.</h2>
+        <p>설치도 회원가입도 없이 바로 써볼 수 있어요. 만든 평면과 물건 정보는 이 기기에만 저장됩니다.</p>
+      </div>
+      <div class="cta-action">
+        <a href="/app" class="cta-go">체험해보기</a>
+        <span class="cta-note">설치 불필요 · 회원가입 없음 · 로컬 저장</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="brand" style="font-size: 18px;">
+        <span class="brand-mark" style="width:20px;height:20px;"></span>
+        Where is my phone
+      </div>
+      <div>
+        <a href="/app">체험해보기</a>
+        <a href="#how">작동 방식</a>
+        <a href="#features">특징</a>
+        <span style="margin-left:24px;">Made in Anyang · 2026</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
