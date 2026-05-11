@@ -11,7 +11,7 @@ import type { NodeSheetMode } from '../components/NodeSheet'
 import { db } from '../db'
 import { deleteNode, updateNode } from '../db/nodes'
 import { DEFAULT_ROOT_GRID, updateRootGridSize } from '../db/spaces'
-import { buildOccupancy, fitsAt, minRequiredGridSize } from '../lib/grid'
+import { fitsAt, minRequiredGridSize } from '../lib/grid'
 import { getPath } from '../lib/path'
 import type { GridSize, MapNode, Position, Space } from '../types'
 
@@ -81,6 +81,15 @@ export default function ContainerPage() {
 
   const minSize: GridSize = minRequiredGridSize(children)
 
+  const parentHref: string | null =
+    parentId === null
+      ? '/'
+      : currentNode
+        ? currentNode.parentId === null
+          ? `/s/${spaceId}`
+          : `/s/${spaceId}/n/${currentNode.parentId}`
+        : null
+
   const handleArm = (pos: Position) => setArmed({ parentId, pos })
 
   const handleCreate = (pos: Position) => {
@@ -110,70 +119,15 @@ export default function ContainerPage() {
     await deleteNode(deleteNodeTarget.id)
   }
 
-  const handleDragSwap = async (sourcePos: Position, targetPos: Position) => {
-    if (sourcePos.x === targetPos.x && sourcePos.y === targetPos.y) return
-    const sourceNode = children.find(
-      (n) => n.position.x === sourcePos.x && n.position.y === sourcePos.y,
-    )
+  const handleMove = async (nodeId: string, pos: Position) => {
+    const sourceNode = children.find((n) => n.id === nodeId)
     if (!sourceNode) return
-    const occ = buildOccupancy(children)
-    const targetOwnerId = occ.get(`${targetPos.x},${targetPos.y}`)
-    const targetNode =
-      targetOwnerId && targetOwnerId !== sourceNode.id
-        ? (children.find((n) => n.id === targetOwnerId) ?? null)
-        : null
-    if (targetNode && targetNode.id !== sourceNode.id) {
-      const others = children.filter(
-        (n) => n.id !== sourceNode.id && n.id !== targetNode.id,
-      )
-      if (
-        !fitsAt(
-          sourceNode.id,
-          targetPos,
-          sourceNode.size,
-          persistedSize,
-          others,
-        )
-      ) {
-        return
-      }
-      if (
-        !fitsAt(
-          targetNode.id,
-          sourcePos,
-          targetNode.size,
-          persistedSize,
-          others,
-        )
-      ) {
-        return
-      }
-      await db.transaction('rw', db.nodes, async () => {
-        const ts = Date.now()
-        await db.nodes.update(sourceNode.id, {
-          position: targetPos,
-          updatedAt: ts,
-        })
-        await db.nodes.update(targetNode.id, {
-          position: sourcePos,
-          updatedAt: ts,
-        })
-      })
-    } else {
-      const others = children.filter((n) => n.id !== sourceNode.id)
-      if (
-        !fitsAt(
-          sourceNode.id,
-          targetPos,
-          sourceNode.size,
-          persistedSize,
-          others,
-        )
-      ) {
-        return
-      }
-      await updateNode(sourceNode.id, { position: targetPos })
-    }
+    if (sourceNode.position.x === pos.x && sourceNode.position.y === pos.y)
+      return
+    const others = children.filter((n) => n.id !== sourceNode.id)
+    if (!fitsAt(sourceNode.id, pos, sourceNode.size, persistedSize, others))
+      return
+    await updateNode(sourceNode.id, { position: pos })
   }
 
   const handleResize = async (nodeId: string, size: GridSize) => {
@@ -218,10 +172,11 @@ export default function ContainerPage() {
         nodes={children}
         containerIds={containerIds}
         armedPosition={armedHere}
+        parentHref={parentHref}
         onArm={handleArm}
         onCreate={handleCreate}
         onMenu={handleMenu}
-        onDragSwap={handleDragSwap}
+        onMove={handleMove}
         onResize={handleResize}
       />
 

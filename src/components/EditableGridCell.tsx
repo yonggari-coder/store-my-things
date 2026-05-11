@@ -1,6 +1,10 @@
-import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { CSS } from '@dnd-kit/utilities'
-import { ChevronRight, MoreHorizontal, Move, Plus } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Move,
+  Plus,
+} from 'lucide-react'
 import { useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { maxSizeFrom } from '../lib/grid'
@@ -8,7 +12,6 @@ import type { GridSize, MapNode, Position } from '../types'
 import ChildDots from './ChildDots'
 
 export default function EditableGridCell({
-  cellId,
   node,
   position,
   isContainer,
@@ -16,9 +19,11 @@ export default function EditableGridCell({
   allNodes,
   gridRef,
   armedPosition,
+  parentHref,
   onArm,
   onCreate,
   onMenu,
+  onMove,
   onResize,
 }: {
   cellId: string
@@ -29,24 +34,18 @@ export default function EditableGridCell({
   allNodes: MapNode[]
   gridRef: RefObject<HTMLDivElement | null>
   armedPosition: Position | null
+  parentHref: string | null
   onArm: (pos: Position) => void
   onCreate: (pos: Position) => void
   onMenu: (node: MapNode) => void
+  onMove: (nodeId: string, pos: Position) => void
   onResize: (nodeId: string, size: GridSize) => void
 }) {
-  const dragDisabled = node === null
-
-  const {
-    setNodeRef: setDragRef,
-    attributes,
-    listeners,
-    transform,
-    isDragging,
-  } = useDraggable({ id: cellId, disabled: dragDisabled })
-  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: cellId })
-
   const [previewSize, setPreviewSize] = useState<GridSize | null>(null)
-  const dragStateRef = useRef<{ pointerId: number } | null>(null)
+  const [moveOffset, setMoveOffset] = useState<{ x: number; y: number } | null>(
+    null,
+  )
+  const resizeStateRef = useRef<{ pointerId: number } | null>(null)
 
   const renderSize: GridSize =
     previewSize ?? node?.size ?? { width: 1, height: 1 }
@@ -64,15 +63,10 @@ export default function EditableGridCell({
       return (
         <button
           type="button"
-          ref={setDropRef}
           onClick={() => onCreate(position)}
           aria-label="새 항목 추가"
           style={placement}
-          className={
-            isOver
-              ? 'flex min-h-0 items-center justify-center rounded-md border-2 border-blue-500 bg-blue-100 text-blue-600'
-              : 'flex min-h-0 items-center justify-center rounded-md border-2 border-blue-500 bg-blue-50 text-blue-600 active:bg-blue-100'
-          }
+          className="flex min-h-0 items-center justify-center rounded-md border-2 border-blue-500 bg-blue-50 text-blue-600 active:bg-blue-100"
         >
           <Plus className="h-5 w-5" />
         </button>
@@ -81,15 +75,10 @@ export default function EditableGridCell({
     return (
       <button
         type="button"
-        ref={setDropRef}
         onClick={() => onArm(position)}
         aria-label="빈 셀"
         style={placement}
-        className={
-          isOver
-            ? 'min-h-0 rounded-md border-2 border-blue-500 bg-blue-50'
-            : 'min-h-0 rounded-md border-2 border-dashed border-neutral-200 active:bg-neutral-100'
-        }
+        className="min-h-0 rounded-md border-2 border-dashed border-neutral-200 active:bg-neutral-100"
       />
     )
   }
@@ -97,11 +86,6 @@ export default function EditableGridCell({
   const currentNode = node
   const tint = currentNode.color ? `${currentNode.color}1a` : '#ffffff'
   const border = currentNode.color ?? '#e5e5e5'
-
-  const setRefs = (el: HTMLDivElement | null) => {
-    setDragRef(el)
-    setDropRef(el)
-  }
 
   const computeSizeFromPointer = (e: {
     clientX: number
@@ -140,20 +124,20 @@ export default function EditableGridCell({
         // ignore
       }
     }
-    dragStateRef.current = { pointerId: e.pointerId }
+    resizeStateRef.current = { pointerId: e.pointerId }
     setPreviewSize(computeSizeFromPointer(e))
   }
 
   const handleResizePointerMove = (e: React.PointerEvent) => {
-    const ds = dragStateRef.current
-    if (!ds || ds.pointerId !== e.pointerId) return
+    const rs = resizeStateRef.current
+    if (!rs || rs.pointerId !== e.pointerId) return
     e.stopPropagation()
     setPreviewSize(computeSizeFromPointer(e))
   }
 
   const handleResizePointerUp = (e: React.PointerEvent) => {
-    const ds = dragStateRef.current
-    if (!ds || ds.pointerId !== e.pointerId) return
+    const rs = resizeStateRef.current
+    if (!rs || rs.pointerId !== e.pointerId) return
     e.stopPropagation()
     const target = e.currentTarget
     if (target.releasePointerCapture) {
@@ -164,7 +148,7 @@ export default function EditableGridCell({
       }
     }
     const final = computeSizeFromPointer(e)
-    dragStateRef.current = null
+    resizeStateRef.current = null
     setPreviewSize(null)
     if (
       final.width !== currentNode.size.width ||
@@ -174,7 +158,76 @@ export default function EditableGridCell({
     }
   }
 
+  const handleMovePointerDown = (
+    e: React.PointerEvent<HTMLSpanElement>,
+  ) => {
+    e.stopPropagation()
+    const startX = e.clientX
+    const startY = e.clientY
+    const pointerId = e.pointerId
+    console.log('[move] pointerdown', { startX, startY, pointerId })
+    setMoveOffset({ x: 0, y: 0 })
+
+    const handleDocMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return
+      setMoveOffset({ x: ev.clientX - startX, y: ev.clientY - startY })
+    }
+    const handleDocUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return
+      document.removeEventListener('pointermove', handleDocMove)
+      document.removeEventListener('pointerup', handleDocUp)
+      document.removeEventListener('pointercancel', handleDocUp)
+      console.log('[move] pointerup', {
+        endX: ev.clientX,
+        endY: ev.clientY,
+        dx: ev.clientX - startX,
+        dy: ev.clientY - startY,
+      })
+      const rect = gridRef.current?.getBoundingClientRect()
+      if (rect) {
+        const cellW = rect.width / gridSize.width
+        const cellH = rect.height / gridSize.height
+        console.log('[move] grid rect', {
+          rectW: rect.width,
+          rectH: rect.height,
+          cellW,
+          cellH,
+        })
+        if (cellW > 0 && cellH > 0) {
+          const dx = Math.round((ev.clientX - startX) / cellW)
+          const dy = Math.round((ev.clientY - startY) / cellH)
+          const maxX = gridSize.width - currentNode.size.width
+          const maxY = gridSize.height - currentNode.size.height
+          const targetX = Math.max(0, Math.min(maxX, position.x + dx))
+          const targetY = Math.max(0, Math.min(maxY, position.y + dy))
+          console.log('[move] target', {
+            from: position,
+            stepDx: dx,
+            stepDy: dy,
+            to: { x: targetX, y: targetY },
+          })
+          if (targetX !== position.x || targetY !== position.y) {
+            console.log('[move] calling onMove', currentNode.id, {
+              x: targetX,
+              y: targetY,
+            })
+            onMove(currentNode.id, { x: targetX, y: targetY })
+          } else {
+            console.log('[move] no position change, skipping')
+          }
+        }
+      } else {
+        console.warn('[move] gridRef.current is null on pointerup')
+      }
+      setMoveOffset(null)
+    }
+    document.addEventListener('pointermove', handleDocMove)
+    document.addEventListener('pointerup', handleDocUp)
+    document.addEventListener('pointercancel', handleDocUp)
+  }
+
   const stopClick = (e: React.MouseEvent) => e.stopPropagation()
+  const isMoving = moveOffset !== null
 
   const cornerBtnBase: CSSProperties = {
     position: 'absolute',
@@ -190,22 +243,19 @@ export default function EditableGridCell({
 
   return (
     <div
-      ref={setRefs}
       style={{
         ...placement,
-        transform: transform
-          ? `${CSS.Translate.toString(transform)} scale(1.06)`
+        transform: moveOffset
+          ? `translate(${moveOffset.x}px, ${moveOffset.y}px) scale(1.06)`
           : undefined,
-        transition: isDragging ? 'none' : 'transform 120ms ease-out',
-        zIndex: isDragging ? 10 : previewSize ? 5 : undefined,
-        opacity: isDragging ? 0.92 : 1,
-        boxShadow: isDragging
+        transition: isMoving ? 'none' : 'transform 120ms ease-out',
+        zIndex: isMoving ? 10 : previewSize ? 5 : undefined,
+        opacity: isMoving ? 0.92 : 1,
+        boxShadow: isMoving
           ? '0 12px 28px rgba(0,0,0,0.22)'
-          : isOver
+          : previewSize
             ? '0 0 0 2px #3b82f6'
-            : previewSize
-              ? '0 0 0 2px #3b82f6'
-              : undefined,
+            : undefined,
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -215,7 +265,7 @@ export default function EditableGridCell({
       <div
         style={{
           backgroundColor: tint,
-          borderColor: isOver ? '#3b82f6' : border,
+          borderColor: border,
         }}
         className="absolute inset-0 flex min-h-0 flex-col items-stretch overflow-hidden rounded-md border p-1.5 pt-7 text-left"
       >
@@ -229,6 +279,24 @@ export default function EditableGridCell({
         )}
       </div>
 
+      {parentHref && (
+        <Link
+          to={parentHref}
+          onClick={stopClick}
+          style={{
+            ...cornerBtnBase,
+            left: 4,
+            top: 4,
+            width: 22,
+            height: 22,
+            color: '#1d4ed8',
+          }}
+          aria-label="밖으로 나가기"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </Link>
+      )}
+
       <button
         type="button"
         onClick={(e) => {
@@ -237,7 +305,7 @@ export default function EditableGridCell({
         }}
         style={{
           ...cornerBtnBase,
-          left: 4,
+          right: 30,
           top: 4,
           width: 22,
           height: 22,
@@ -264,27 +332,28 @@ export default function EditableGridCell({
       </Link>
 
       <span
-        {...attributes}
-        {...listeners}
+        role="button"
+        aria-label="옮기기"
+        onPointerDown={handleMovePointerDown}
         onClick={stopClick}
         style={{
           ...cornerBtnBase,
           left: 4,
           bottom: 4,
-          width: 26,
-          height: 26,
+          width: 32,
+          height: 32,
           touchAction: 'none',
-          cursor: isDragging ? 'grabbing' : 'grab',
-          background: 'rgba(59,130,246,0.18)',
+          cursor: isMoving ? 'grabbing' : 'grab',
+          background: 'rgba(59,130,246,0.32)',
           color: '#1d4ed8',
         }}
-        aria-label="옮기기"
       >
         <Move className="h-4 w-4" />
       </span>
 
       <span
-        role="presentation"
+        role="button"
+        aria-label="크기 조절"
         onPointerDown={handleResizePointerDown}
         onPointerMove={handleResizePointerMove}
         onPointerUp={handleResizePointerUp}
@@ -303,7 +372,6 @@ export default function EditableGridCell({
             'linear-gradient(135deg, transparent 50%, rgba(59,130,246,0.32) 50%)',
           borderBottomRightRadius: 6,
         }}
-        aria-label="크기 조절"
       >
         <svg
           width="16"
