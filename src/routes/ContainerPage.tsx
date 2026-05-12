@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { LayoutGrid, RotateCcw } from 'lucide-react'
+import { Check, LayoutGrid, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
@@ -11,7 +11,7 @@ import NodeSheet from '../components/NodeSheet'
 import type { NodeSheetMode } from '../components/NodeSheet'
 import TemplateSheet from '../components/TemplateSheet'
 import { db } from '../db'
-import { deleteNode, updateNode } from '../db/nodes'
+import { createNode, deleteNode, updateNode } from '../db/nodes'
 import { DEFAULT_ROOT_GRID, updateRootGridSize } from '../db/spaces'
 import { fitsAt, minRequiredGridSize } from '../lib/grid'
 import { getPath } from '../lib/path'
@@ -20,6 +20,17 @@ import type { GridSize, MapNode, Position, Space } from '../types'
 type ArmedCell = { parentId: string | null; pos: Position }
 
 const MAX_GRID: GridSize = { width: 12, height: 12 }
+
+const AUTO_COLORS = [
+  '#3b82f6',
+  '#a855f7',
+  '#10b981',
+  '#ef4444',
+  '#f59e0b',
+  '#6366f1',
+  '#ec4899',
+  '#737373',
+] as const
 
 export default function ContainerPage() {
   const { spaceId, nodeId } = useParams()
@@ -45,6 +56,7 @@ export default function ContainerPage() {
   const [deleteNodeTarget, setDeleteNodeTarget] = useState<MapNode | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
+  const [drawingMode, setDrawingMode] = useState(false)
 
   if (!spaceId) {
     return <NotFoundMessage message="잘못된 주소입니다." />
@@ -123,6 +135,10 @@ export default function ContainerPage() {
     await deleteNode(deleteNodeTarget.id)
   }
 
+  const handleDeleteById = async (nodeId: string) => {
+    await deleteNode(nodeId)
+  }
+
   const handleMove = async (nodeId: string, pos: Position) => {
     const sourceNode = children.find((n) => n.id === nodeId)
     if (!sourceNode) return
@@ -146,8 +162,20 @@ export default function ContainerPage() {
 
   const handleTemplateDraw = () => {
     setTemplateOpen(false)
-    // TODO(stage3): 그리기 모드 진입
-    window.alert('집 구조 그리기 모드는 준비 중입니다.')
+    setDrawingMode(true)
+  }
+
+  const handleDraw = async (pos: Position, size: GridSize) => {
+    if (!fitsAt(null, pos, size, persistedSize, children)) return
+    const idx = children.length % AUTO_COLORS.length
+    await createNode({
+      spaceId,
+      parentId,
+      name: `구획 ${children.length + 1}`,
+      position: pos,
+      size,
+      color: AUTO_COLORS[idx],
+    })
   }
 
   const handleTemplatePreset = () => {
@@ -166,47 +194,63 @@ export default function ContainerPage() {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-2 px-4 pt-2 pb-1">
-        <GridSizeStepper
-          label="열"
-          value={persistedSize.width}
-          min={minSize.width}
-          max={MAX_GRID.width}
-          onChange={(w) =>
-            commitSize({ width: w, height: persistedSize.height })
-          }
-        />
-        <GridSizeStepper
-          label="행"
-          value={persistedSize.height}
-          min={minSize.height}
-          max={MAX_GRID.height}
-          onChange={(h) =>
-            commitSize({ width: persistedSize.width, height: h })
-          }
-        />
-        <div className="ml-auto flex items-center gap-1">
+      {drawingMode ? (
+        <div className="flex items-center justify-between gap-2 border-b border-blue-200 bg-blue-50 px-4 py-2">
+          <span className="text-sm font-medium text-blue-700">
+            드래그해서 구획을 그려요
+          </span>
           <button
             type="button"
-            onClick={() => setResetOpen(true)}
-            aria-label="리셋"
-            disabled={children.length === 0}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 active:bg-neutral-100 disabled:opacity-30"
+            onClick={() => setDrawingMode(false)}
+            className="flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1.5 text-xs font-medium text-white active:bg-blue-700"
           >
-            <RotateCcw className="h-4 w-4" />
+            <Check className="h-3.5 w-3.5" />
+            완료
           </button>
-          {parentId === null && (
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-4 pt-2 pb-1">
+          <GridSizeStepper
+            label="열"
+            value={persistedSize.width}
+            min={minSize.width}
+            max={MAX_GRID.width}
+            onChange={(w) =>
+              commitSize({ width: w, height: persistedSize.height })
+            }
+          />
+          <GridSizeStepper
+            label="행"
+            value={persistedSize.height}
+            min={minSize.height}
+            max={MAX_GRID.height}
+            onChange={(h) =>
+              commitSize({ width: persistedSize.width, height: h })
+            }
+          />
+          <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setTemplateOpen(true)}
-              aria-label="템플릿"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 active:bg-neutral-100"
+              onClick={() => setResetOpen(true)}
+              aria-label="리셋"
+              disabled={children.length === 0}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 active:bg-neutral-100 disabled:opacity-30"
             >
-              <LayoutGrid className="h-4 w-4" />
+              <RotateCcw className="h-4 w-4" />
             </button>
-          )}
+            {parentId === null && (
+              <button
+                type="button"
+                onClick={() => setTemplateOpen(true)}
+                aria-label="템플릿"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 active:bg-neutral-100"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <Breadcrumb path={path} spaceId={spaceId} />
 
@@ -216,8 +260,11 @@ export default function ContainerPage() {
         containerIds={containerIds}
         armedPosition={armedHere}
         parentHref={parentHref}
+        drawingMode={drawingMode}
         onArm={handleArm}
         onCreate={handleCreate}
+        onDelete={handleDeleteById}
+        onDraw={handleDraw}
         onMenu={handleMenu}
         onMove={handleMove}
         onResize={handleResize}

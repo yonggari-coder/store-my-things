@@ -4,8 +4,10 @@ import {
   MoreHorizontal,
   Move,
   Plus,
+  Trash2,
 } from 'lucide-react'
 import { useRef, useState, type CSSProperties, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { maxSizeFrom } from '../lib/grid'
 import type { GridSize, MapNode, Position } from '../types'
@@ -22,6 +24,7 @@ export default function EditableGridCell({
   parentHref,
   onArm,
   onCreate,
+  onDelete,
   onMenu,
   onMove,
   onResize,
@@ -37,6 +40,7 @@ export default function EditableGridCell({
   parentHref: string | null
   onArm: (pos: Position) => void
   onCreate: (pos: Position) => void
+  onDelete: (nodeId: string) => void
   onMenu: (node: MapNode) => void
   onMove: (nodeId: string, pos: Position) => void
   onResize: (nodeId: string, size: GridSize) => void
@@ -45,7 +49,9 @@ export default function EditableGridCell({
   const [moveOffset, setMoveOffset] = useState<{ x: number; y: number } | null>(
     null,
   )
+  const [overTrash, setOverTrash] = useState(false)
   const resizeStateRef = useRef<{ pointerId: number } | null>(null)
+  const trashRef = useRef<HTMLDivElement | null>(null)
 
   const renderSize: GridSize =
     previewSize ?? node?.size ?? { width: 1, height: 1 }
@@ -165,34 +171,41 @@ export default function EditableGridCell({
     const startX = e.clientX
     const startY = e.clientY
     const pointerId = e.pointerId
-    console.log('[move] pointerdown', { startX, startY, pointerId })
     setMoveOffset({ x: 0, y: 0 })
+
+    const isOverTrash = (ev: PointerEvent): boolean => {
+      const tr = trashRef.current?.getBoundingClientRect()
+      if (!tr) return false
+      return (
+        ev.clientX >= tr.left &&
+        ev.clientX <= tr.right &&
+        ev.clientY >= tr.top &&
+        ev.clientY <= tr.bottom
+      )
+    }
 
     const handleDocMove = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return
       setMoveOffset({ x: ev.clientX - startX, y: ev.clientY - startY })
+      setOverTrash(isOverTrash(ev))
     }
     const handleDocUp = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return
       document.removeEventListener('pointermove', handleDocMove)
       document.removeEventListener('pointerup', handleDocUp)
       document.removeEventListener('pointercancel', handleDocUp)
-      console.log('[move] pointerup', {
-        endX: ev.clientX,
-        endY: ev.clientY,
-        dx: ev.clientX - startX,
-        dy: ev.clientY - startY,
-      })
+
+      if (isOverTrash(ev)) {
+        onDelete(currentNode.id)
+        setOverTrash(false)
+        setMoveOffset(null)
+        return
+      }
+
       const rect = gridRef.current?.getBoundingClientRect()
       if (rect) {
         const cellW = rect.width / gridSize.width
         const cellH = rect.height / gridSize.height
-        console.log('[move] grid rect', {
-          rectW: rect.width,
-          rectH: rect.height,
-          cellW,
-          cellH,
-        })
         if (cellW > 0 && cellH > 0) {
           const dx = Math.round((ev.clientX - startX) / cellW)
           const dy = Math.round((ev.clientY - startY) / cellH)
@@ -200,25 +213,12 @@ export default function EditableGridCell({
           const maxY = gridSize.height - currentNode.size.height
           const targetX = Math.max(0, Math.min(maxX, position.x + dx))
           const targetY = Math.max(0, Math.min(maxY, position.y + dy))
-          console.log('[move] target', {
-            from: position,
-            stepDx: dx,
-            stepDy: dy,
-            to: { x: targetX, y: targetY },
-          })
           if (targetX !== position.x || targetY !== position.y) {
-            console.log('[move] calling onMove', currentNode.id, {
-              x: targetX,
-              y: targetY,
-            })
             onMove(currentNode.id, { x: targetX, y: targetY })
-          } else {
-            console.log('[move] no position change, skipping')
           }
         }
-      } else {
-        console.warn('[move] gridRef.current is null on pointerup')
       }
+      setOverTrash(false)
       setMoveOffset(null)
     }
     document.addEventListener('pointermove', handleDocMove)
@@ -388,6 +388,37 @@ export default function EditableGridCell({
           />
         </svg>
       </span>
+
+      {isMoving &&
+        createPortal(
+          <div
+            ref={trashRef}
+            aria-hidden
+            style={{
+              position: 'fixed',
+              right: 20,
+              bottom: `calc(20px + env(safe-area-inset-bottom, 0px))`,
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              background: overTrash ? '#ef4444' : 'rgba(239,68,68,0.85)',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              boxShadow: overTrash
+                ? '0 8px 32px rgba(239,68,68,0.5)'
+                : '0 4px 16px rgba(0,0,0,0.3)',
+              transition: 'transform 120ms, background 120ms, box-shadow 120ms',
+              transform: overTrash ? 'scale(1.18)' : 'scale(1)',
+              pointerEvents: 'none',
+            }}
+          >
+            <Trash2 className="h-7 w-7" />
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

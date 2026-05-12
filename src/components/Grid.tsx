@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from 'react'
 import { buildOccupancy } from '../lib/grid'
 import type { GridSize, MapNode, Position } from '../types'
+import DrawingOverlay from './DrawingOverlay'
 import EditableGridCell from './EditableGridCell'
 
 const cellId = (x: number, y: number) => `${x}:${y}`
@@ -11,8 +12,11 @@ export default function Grid({
   containerIds,
   armedPosition,
   parentHref,
+  drawingMode,
   onArm,
   onCreate,
+  onDelete,
+  onDraw,
   onMenu,
   onMove,
   onResize,
@@ -22,8 +26,11 @@ export default function Grid({
   containerIds: ReadonlySet<string>
   armedPosition: Position | null
   parentHref: string | null
+  drawingMode: boolean
   onArm: (pos: Position) => void
   onCreate: (pos: Position) => void
+  onDelete: (nodeId: string) => void
+  onDraw: (pos: Position, size: GridSize) => void
   onMenu: (node: MapNode) => void
   onMove: (nodeId: string, pos: Position) => void
   onResize: (nodeId: string, size: GridSize) => void
@@ -49,6 +56,7 @@ export default function Grid({
         parentHref={parentHref}
         onArm={onArm}
         onCreate={onCreate}
+        onDelete={onDelete}
         onMenu={onMenu}
         onMove={onMove}
         onResize={onResize}
@@ -74,6 +82,7 @@ export default function Grid({
           parentHref={parentHref}
           onArm={onArm}
           onCreate={onCreate}
+          onDelete={onDelete}
           onMenu={onMenu}
           onMove={onMove}
           onResize={onResize}
@@ -85,15 +94,27 @@ export default function Grid({
   return (
     <div className="p-3">
       <div
-        ref={gridRef}
-        className="grid gap-1.5"
-        style={{
-          gridTemplateColumns: `repeat(${gridSize.width}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${gridSize.height}, minmax(0, 1fr))`,
-          aspectRatio: `${gridSize.width} / ${gridSize.height}`,
-        }}
+        className="relative"
+        style={{ aspectRatio: `${gridSize.width} / ${gridSize.height}` }}
       >
-        {cells}
+        <div
+          ref={gridRef}
+          className="grid h-full w-full gap-1.5"
+          style={{
+            gridTemplateColumns: `repeat(${gridSize.width}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${gridSize.height}, minmax(0, 1fr))`,
+          }}
+        >
+          {cells}
+        </div>
+        {drawingMode && (
+          <DrawingOverlay
+            gridSize={gridSize}
+            nodes={nodes}
+            gridRef={gridRef}
+            onDraw={onDraw}
+          />
+        )}
       </div>
     </div>
   )
