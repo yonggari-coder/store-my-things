@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { LayoutGrid, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
@@ -8,6 +9,7 @@ import Grid from '../components/Grid'
 import GridSizeStepper from '../components/GridSizeStepper'
 import NodeSheet from '../components/NodeSheet'
 import type { NodeSheetMode } from '../components/NodeSheet'
+import TemplateSheet from '../components/TemplateSheet'
 import { db } from '../db'
 import { deleteNode, updateNode } from '../db/nodes'
 import { DEFAULT_ROOT_GRID, updateRootGridSize } from '../db/spaces'
@@ -41,6 +43,8 @@ export default function ContainerPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [menuNode, setMenuNode] = useState<MapNode | null>(null)
   const [deleteNodeTarget, setDeleteNodeTarget] = useState<MapNode | null>(null)
+  const [resetOpen, setResetOpen] = useState(false)
+  const [templateOpen, setTemplateOpen] = useState(false)
 
   if (!spaceId) {
     return <NotFoundMessage message="잘못된 주소입니다." />
@@ -134,6 +138,24 @@ export default function ContainerPage() {
     await updateNode(nodeId, { size })
   }
 
+  const handleReset = async () => {
+    for (const child of children) {
+      await deleteNode(child.id)
+    }
+  }
+
+  const handleTemplateDraw = () => {
+    setTemplateOpen(false)
+    // TODO(stage3): 그리기 모드 진입
+    window.alert('집 구조 그리기 모드는 준비 중입니다.')
+  }
+
+  const handleTemplatePreset = () => {
+    setTemplateOpen(false)
+    // TODO: 프리셋 선택 시트
+    window.alert('기본 템플릿은 준비 중입니다.')
+  }
+
   const commitSize = async (next: GridSize) => {
     if (parentId === null) {
       await updateRootGridSize(spaceId, next)
@@ -163,6 +185,27 @@ export default function ContainerPage() {
             commitSize({ width: persistedSize.width, height: h })
           }
         />
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setResetOpen(true)}
+            aria-label="리셋"
+            disabled={children.length === 0}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 active:bg-neutral-100 disabled:opacity-30"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+          {parentId === null && (
+            <button
+              type="button"
+              onClick={() => setTemplateOpen(true)}
+              aria-label="템플릿"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 active:bg-neutral-100"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <Breadcrumb path={path} spaceId={spaceId} />
@@ -208,6 +251,22 @@ export default function ContainerPage() {
         description="안에 들어 있는 모든 항목이 함께 삭제됩니다. 되돌릴 수 없습니다."
         confirmLabel="삭제"
         onConfirm={confirmDelete}
+      />
+
+      <ConfirmDialog
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        title="이 공간을 비울까요?"
+        description="안에 들어 있는 모든 항목이 삭제됩니다. 그리드 사이즈는 유지돼요. 되돌릴 수 없습니다."
+        confirmLabel="비우기"
+        onConfirm={handleReset}
+      />
+
+      <TemplateSheet
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        onDraw={handleTemplateDraw}
+        onPreset={handleTemplatePreset}
       />
     </div>
   )
