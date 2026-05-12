@@ -3,7 +3,7 @@ import { generateId } from '../lib/id'
 import { LOCAL_OWNER } from '../lib/owner'
 import { db } from './index'
 
-export const DEFAULT_ROOT_GRID: GridSize = { width: 4, height: 4 }
+export const DEFAULT_ROOT_GRID: GridSize = { width: 10, height: 10 }
 
 export async function createSpace(input: { name: string }): Promise<Space> {
   const now = Date.now()

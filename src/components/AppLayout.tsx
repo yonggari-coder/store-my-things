@@ -16,7 +16,7 @@ export default function AppLayout() {
           </Link>
         </nav>
       </header>
-      <main className="flex-1">
+      <main className="mx-auto w-full max-w-2xl flex-1">
         <Outlet />
       </main>
     </div>

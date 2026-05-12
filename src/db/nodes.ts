@@ -3,7 +3,7 @@ import { generateId } from '../lib/id'
 import { LOCAL_OWNER } from '../lib/owner'
 import { db } from './index'
 
-export const DEFAULT_GRID: GridSize = { width: 4, height: 4 }
+export const DEFAULT_GRID: GridSize = { width: 6, height: 6 }
 export const DEFAULT_NODE_SIZE: GridSize = { width: 1, height: 1 }
 
 export async function createNode(input: {
