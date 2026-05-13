@@ -11,6 +11,8 @@ export default function SpaceFormSheet({
   initialName,
   submitLabel,
   onSubmit,
+  secondarySubmitLabel,
+  onSecondarySubmit,
 }: {
   open: boolean
   onOpenChange: (next: boolean) => void
@@ -18,6 +20,8 @@ export default function SpaceFormSheet({
   initialName?: string
   submitLabel: string
   onSubmit: (result: SpaceFormResult) => Promise<unknown> | void
+  secondarySubmitLabel?: string
+  onSecondarySubmit?: (result: SpaceFormResult) => Promise<unknown> | void
 }) {
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
@@ -36,6 +40,15 @@ export default function SpaceFormSheet({
                 await onSubmit(result)
                 onOpenChange(false)
               }}
+              secondarySubmitLabel={secondarySubmitLabel}
+              onSecondarySubmit={
+                onSecondarySubmit
+                  ? async (result) => {
+                      await onSecondarySubmit(result)
+                      onOpenChange(false)
+                    }
+                  : undefined
+              }
               onCancel={() => onOpenChange(false)}
             />
           )}
@@ -49,11 +62,15 @@ function FormBody({
   initialName,
   submitLabel,
   onSubmit,
+  secondarySubmitLabel,
+  onSecondarySubmit,
   onCancel,
 }: {
   initialName?: string
   submitLabel: string
   onSubmit: (result: SpaceFormResult) => Promise<void>
+  secondarySubmitLabel?: string
+  onSecondarySubmit?: (result: SpaceFormResult) => Promise<void>
   onCancel: () => void
 }) {
   const [name, setName] = useState(initialName ?? '')
@@ -67,6 +84,11 @@ function FormBody({
     await onSubmit({ name: trimmed })
   }
 
+  const handleSecondary = async () => {
+    if (!canSubmit || !onSecondarySubmit) return
+    await onSecondarySubmit({ name: trimmed })
+  }
+
   return (
     <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4 px-5">
       <input
@@ -78,7 +100,7 @@ function FormBody({
         autoFocus
         className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-blue-500"
       />
-      <div className="mt-2 flex justify-end gap-2 pb-5">
+      <div className="mt-2 flex flex-wrap justify-end gap-2 pb-5">
         <button
           type="button"
           onClick={onCancel}
@@ -93,6 +115,16 @@ function FormBody({
         >
           {submitLabel}
         </button>
+        {secondarySubmitLabel && onSecondarySubmit && (
+          <button
+            type="button"
+            onClick={handleSecondary}
+            disabled={!canSubmit}
+            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+          >
+            {secondarySubmitLabel}
+          </button>
+        )}
       </div>
     </form>
   )

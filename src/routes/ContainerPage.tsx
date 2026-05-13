@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, LayoutGrid, RotateCcw } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import CellMenuSheet from '../components/CellMenuSheet'
 import ConfirmDialog from '../components/ConfirmDialog'
@@ -35,6 +35,7 @@ const AUTO_COLORS = [
 export default function ContainerPage() {
   const { spaceId, nodeId } = useParams()
   const parentId = nodeId ?? null
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const path = useLiveQuery(
     async () => (spaceId ? getPath(spaceId, parentId) : []),
@@ -56,7 +57,17 @@ export default function ContainerPage() {
   const [deleteNodeTarget, setDeleteNodeTarget] = useState<MapNode | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
-  const [drawingMode, setDrawingMode] = useState(false)
+  const [drawingMode, setDrawingMode] = useState(
+    () => searchParams.get('draw') === '1',
+  )
+
+  useEffect(() => {
+    if (searchParams.get('draw') === '1') {
+      const next = new URLSearchParams(searchParams)
+      next.delete('draw')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   if (!spaceId) {
     return <NotFoundMessage message="잘못된 주소입니다." />

@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import Fab from '../components/Fab'
 import SpaceCard from '../components/SpaceCard'
@@ -10,6 +11,7 @@ import { createSpace, listSpaces } from '../db/spaces'
 export default function SpacesPage() {
   const spaces = useLiveQuery(() => listSpaces())
   const [createOpen, setCreateOpen] = useState(false)
+  const navigate = useNavigate()
 
   if (spaces === undefined) {
     return <div className="p-4 text-sm text-neutral-400">불러오는 중…</div>
@@ -50,8 +52,15 @@ export default function SpacesPage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         title="새 공간 만들기"
-        submitLabel="만들기"
-        onSubmit={({ name }) => createSpace({ name })}
+        submitLabel="직접 만들기"
+        onSubmit={async ({ name }) => {
+          await createSpace({ name })
+        }}
+        secondarySubmitLabel="집 구조 세팅하기"
+        onSecondarySubmit={async ({ name }) => {
+          const space = await createSpace({ name })
+          navigate(`/app/s/${space.id}?draw=1`)
+        }}
       />
     </>
   )
