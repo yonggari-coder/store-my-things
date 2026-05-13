@@ -53,6 +53,7 @@ function NodeFormBody({
   onClose: () => void
 }) {
   const initial = mode.kind === 'edit' ? mode.node : null
+  const [step, setStep] = useState<'basic' | 'extras'>('basic')
   const [name, setName] = useState(initial?.name ?? '')
   const [color, setColor] = useState<string | null>(initial?.color ?? null)
   const [category, setCategory] = useState<string | null>(
@@ -102,64 +103,103 @@ function NodeFormBody({
       onSubmit={handleSubmit}
       className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 pt-4 pb-5"
     >
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="이름 (예: 지갑, 옷장)"
-        maxLength={60}
-        autoFocus
-        className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-blue-500"
-      />
+      {step === 'basic' ? (
+        <>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="이름 (예: 지갑, 옷장)"
+            maxLength={60}
+            className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base outline-none focus:border-blue-500"
+          />
 
-      <ColorPalette value={color} onChange={setColor} />
-      <CategoryPicker
-        categories={categories}
-        value={category}
-        onChange={setCategory}
-      />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            {mode.kind === 'edit' ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="rounded-lg px-3 py-2 text-sm text-red-600 active:bg-red-50"
+              >
+                삭제
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg px-4 py-2 text-sm text-neutral-600 active:bg-neutral-100"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('extras')}
+                disabled={!canSubmit}
+                className="rounded-lg bg-neutral-100 px-4 py-2 text-sm font-medium text-neutral-700 active:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                다음
+              </button>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <ColorPalette value={color} onChange={setColor} />
+          <CategoryPicker
+            categories={categories}
+            value={category}
+            onChange={setCategory}
+          />
 
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-neutral-500">메모</span>
-        <textarea
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          placeholder="자유 메모 (선택)"
-          maxLength={500}
-          rows={3}
-          className="w-full resize-none rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-        />
-      </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium text-neutral-500">메모</span>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              placeholder="자유 메모 (선택)"
+              maxLength={500}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
-        {mode.kind === 'edit' ? (
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="rounded-lg px-3 py-2 text-sm text-red-600 active:bg-red-50"
-          >
-            삭제
-          </button>
-        ) : (
-          <span />
-        )}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-neutral-600 active:bg-neutral-100"
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
-          >
-            저장
-          </button>
-        </div>
-      </div>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setStep('basic')}
+              className="rounded-lg px-3 py-2 text-sm text-neutral-600 active:bg-neutral-100"
+            >
+              ← 이전
+            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg px-4 py-2 text-sm text-neutral-600 active:bg-neutral-100"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-neutral-300"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {mode.kind === 'edit' && (
         <ConfirmDialog
