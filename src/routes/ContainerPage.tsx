@@ -9,12 +9,14 @@ import Grid from '../components/Grid'
 import GridSizeStepper from '../components/GridSizeStepper'
 import NodeSheet from '../components/NodeSheet'
 import type { NodeSheetMode } from '../components/NodeSheet'
+import PresetSheet from '../components/PresetSheet'
 import TemplateSheet from '../components/TemplateSheet'
 import { db } from '../db'
 import { createNode, deleteNode, updateNode } from '../db/nodes'
 import { DEFAULT_ROOT_GRID, updateRootGridSize } from '../db/spaces'
 import { fitsAt, minRequiredGridSize } from '../lib/grid'
 import { getPath } from '../lib/path'
+import { applyTemplate, type Template } from '../lib/templates'
 import type { GridSize, MapNode, Position, Space } from '../types'
 
 type ArmedCell = { parentId: string | null; pos: Position }
@@ -57,6 +59,7 @@ export default function ContainerPage() {
   const [deleteNodeTarget, setDeleteNodeTarget] = useState<MapNode | null>(null)
   const [resetOpen, setResetOpen] = useState(false)
   const [templateOpen, setTemplateOpen] = useState(false)
+  const [presetOpen, setPresetOpen] = useState(false)
   const [drawingMode, setDrawingMode] = useState(
     () => searchParams.get('draw') === '1',
   )
@@ -191,8 +194,12 @@ export default function ContainerPage() {
 
   const handleTemplatePreset = () => {
     setTemplateOpen(false)
-    // TODO: 프리셋 선택 시트
-    window.alert('기본 템플릿은 준비 중입니다.')
+    setPresetOpen(true)
+  }
+
+  const handleApplyTemplate = async (template: Template) => {
+    setPresetOpen(false)
+    await applyTemplate(spaceId, template)
   }
 
   const commitSize = async (next: GridSize) => {
@@ -325,6 +332,12 @@ export default function ContainerPage() {
         onOpenChange={setTemplateOpen}
         onDraw={handleTemplateDraw}
         onPreset={handleTemplatePreset}
+      />
+
+      <PresetSheet
+        open={presetOpen}
+        onOpenChange={setPresetOpen}
+        onApply={handleApplyTemplate}
       />
     </div>
   )
